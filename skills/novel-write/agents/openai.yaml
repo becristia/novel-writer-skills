@@ -1,0 +1,4 @@
+interface:
+  display_name: "Novel Write"
+  short_description: "Write, audit, and revise chapters"
+  default_prompt: "Use $novel-write to write or revise the next chapter from the outline, run self-checks, and prepare human review."

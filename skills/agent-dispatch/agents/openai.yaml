@@ -1,0 +1,4 @@
+interface:
+  display_name: "Agent Dispatch"
+  short_description: "Coordinate writing and audit subagents"
+  default_prompt: "Use $agent-dispatch to run isolated chapter-drafting support or a parallel-audit dispatch flow."

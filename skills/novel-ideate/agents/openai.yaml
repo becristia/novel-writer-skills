@@ -1,0 +1,4 @@
+interface:
+  display_name: "Novel Ideate"
+  short_description: "Develop a web-novel concept"
+  default_prompt: "Use $novel-ideate to brainstorm a novel concept, confirm the five questions, and draft title, blurb, and selling points."

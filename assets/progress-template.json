@@ -1,0 +1,97 @@
+{
+  "project_name": "",
+  "created_at": "",
+  "updated_at": "",
+  "status": "in_progress",
+  "current_phase": "ideate",
+  "_current_chapter_comment": "current_chapter = 已定稿章节号。大纲规划覆盖范围看 phases.structure.total_chapters_planned 与 追踪/写作任务.md，不用 current_chapter 表示。",
+  "current_map": 0,
+  "current_chapter": 0,
+  "phases": {
+    "ideate": {"status": "pending", "notes": ""},
+    "design": {"status": "pending", "notes": ""},
+    "structure": {"status": "pending", "maps_planned": 0, "total_chapters_planned": 0, "notes": ""},
+    "write": {"status": "pending", "maps": []}
+  },
+  "foreshadowing": {"total": 0, "planted": 0, "recovered": 0},
+  "tracking": {
+    "_comment": "外部审计新增：追踪层文件路径与待处理更新。追踪层是续写状态，不等同于知识库正史。",
+    "active_context_path": "追踪/当前上下文.md",
+    "foreshadowing_path": "追踪/伏笔.md",
+    "timeline_path": "追踪/时间线.md",
+    "character_state_path": "追踪/角色状态.md",
+    "plotline_path": "追踪/情节线.md",
+    "writing_tasks_path": "追踪/写作任务.md",
+    "last_active_context_chapter": 0,
+    "pending_tracking_updates": []
+  },
+  "knowledge_base": {
+    "characters": 0, "locations": 0, "factions": 0, "items": 0, "concepts": 0
+  },
+  "pending_knowledge": [],
+  "preferences": {
+    "cross_model_review": {"enabled": false, "external_model": "", "usage_log": []},
+    "notes": ""
+  },
+  "triggers": {
+    "_comment": "v3: AI 在 novel-write 步骤⑧自动检查这些字段，满足条件时主动提醒",
+    "next_periodic_review": 50,
+    "next_index_sync": 10,
+    "pending_map_transition_check": false,
+    "next_cross_model_review": 30,
+    "next_skill_change_review": 0,
+    "last_periodic_review_chapter": 0,
+    "last_index_sync_chapter": 0
+  },
+  "checks": {
+    "_comment": "v3 新增：上次自检通过的关卡状态快照",
+    "ideate_done": false,
+    "design_done": false,
+    "structure_done": false,
+    "iron_rules_passed_last_run": [],
+    "human_review_pending": false
+  },
+  "workflow_gates": {
+    "_comment": "状态机与人审门禁。AI 只能建议状态变更；需要 human_approved=true 的状态必须由作者明确确认。",
+    "ideate": {
+      "status": "pending",
+      "human_approved": false,
+      "approved_by": "",
+      "approved_at": "",
+      "blocked_reason": ""
+    },
+    "design": {
+      "status": "pending",
+      "human_approved": false,
+      "approved_by": "",
+      "approved_at": "",
+      "blocked_reason": ""
+    },
+    "structure": {
+      "status": "pending",
+      "outline_ready": false,
+      "human_approved": false,
+      "approved_by": "",
+      "approved_at": "",
+      "blocked_reason": ""
+    },
+    "chapter_gate_template": {
+      "_comment": "模板，不是实时状态。真实章节门禁写入 workflow_gates.chapters.<场景任务ID>，避免多章状态互相覆盖。",
+      "chapter_id": "CH-001",
+      "scene_task_id": "WT-001",
+      "status": "pending",
+      "outline_ready": false,
+      "draft_ready": false,
+      "self_check_passed": false,
+      "human_finalized": false,
+      "knowledge_reviewed": false,
+      "approved_by": "",
+      "approved_at": "",
+      "blocked_reason": ""
+    },
+    "chapters": {}
+  },
+  "_feedback_history_comment": "v3 新增：L1-L4 反馈历史，用于审计与统计（顶层数组，每条形如 {chapter, level, tags, resolved}）",
+  "feedback_history": [],
+  "cross_model_reviews": []
+}

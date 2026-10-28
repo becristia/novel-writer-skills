@@ -1,0 +1,22 @@
+{
+  "name": "novel-writer-skills",
+  "description": "网络小说创作辅助工作流：4个核心创作技能覆盖构思→设定→大纲→创作审核，3个支撑技能处理灵感、子代理调度与元审计；AI只给候选、草稿和检查，人审决定定稿、正史入库与阶段推进",
+  "version": "1.0.0",
+  "author": {
+    "name": "nanobot"
+  },
+  "homepage": "https://github.com/becristia/novel-writer-skills",
+  "repository": "https://github.com/becristia/novel-writer-skills",
+  "license": "MIT",
+  "keywords": [
+    "novel",
+    "writing",
+    "chinese-web-novel",
+    "creative-writing",
+    "worldbuilding",
+    "skills",
+    "workflow",
+    "xianxia",
+    "xuanhuan"
+  ]
+}

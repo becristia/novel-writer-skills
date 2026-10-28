@@ -1,0 +1,4 @@
+interface:
+  display_name: "Novel Meta"
+  short_description: "Maintain and audit the skill workflow"
+  default_prompt: "Use $novel-meta to audit or evolve a novel-writing skill, config, template, or workflow rule."

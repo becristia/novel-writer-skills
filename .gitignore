@@ -1,0 +1,55 @@
+# Old archive
+novel-old/
+
+# Design docs (not needed for plugin)
+docs/
+
+# External reviews — local-only reference, never publish
+# (already covered by docs/, listed explicitly for clarity)
+docs/reviews/
+
+# Local sample runs — 10-chapter dogfooding before product decisions
+local-samples/
+
+# Local Claude Code settings
+.claude/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+
+# Temp
+*.tmp
+*.log
+__pycache__/
+*.pyc
+
+# === 小说项目文件防护 ===
+# 防止小说创作内容污染 skill 仓库
+# 小说项目的设定、大纲、正文、摘要和进度文件
+# 应保存在各自项目目录中，不应进入 skill 仓库
+
+# 顶层数字开头的小说文件
+/00-核心概念.md
+/00-书名简介.md
+/01-世界观.md
+/02-人物档案.md
+/03-力量体系.md
+/04-物品装备.md
+/05-人物关系.md
+
+# 小说工作目录
+/03-大纲/
+/正文/
+/摘要/
+/知识库/
+/进度.json
+/novel-config.json
+
+# === 第三方参考项目 ===
+# 本地参考用的第三方项目，不应进入 skill 仓库
+/third_party/

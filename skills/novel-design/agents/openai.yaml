@@ -1,0 +1,4 @@
+interface:
+  display_name: "Novel Design"
+  short_description: "Design world, characters, and systems"
+  default_prompt: "Use $novel-design to turn the confirmed novel concept into world, character, power-system, item, and relationship specs."

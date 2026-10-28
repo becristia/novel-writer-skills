@@ -1,0 +1,141 @@
+{
+  "_comment": "项目级配置。修改后影响所有技能行为。续作时AI首先读取此文件。v3 升级：iron_rules 改为编号制，ai_flavor_rules 重命名为 ai_flavor。",
+
+  "project": {
+    "name": "",
+    "genre": "",
+    "type": "web_novel",
+    "platform": "番茄小说",
+    "_platform_note": "默认面向番茄小说。起点/七猫/其他平台需调整 iron_rules 和 quality_thresholds。"
+  },
+
+  "creative_authority": {
+    "_comment": "人类创作主权。AI 是创作辅助，不是自动生产线。",
+    "human_decides": [
+      "题材方向",
+      "平台定位",
+      "读者承诺",
+      "人物灵魂",
+      "剧情取舍",
+      "章节定稿",
+      "正史入库",
+      "规则和配置修改"
+    ],
+    "ai_assists": [
+      "追问盲点",
+      "提供候选",
+      "起草文本",
+      "检查一致性",
+      "整理知识库草稿",
+      "生成审核包"
+    ],
+    "requires_human_approval": [
+      "checks.ideate_done",
+      "checks.design_done",
+      "checks.structure_done",
+      "chapter_final",
+      "knowledge_base_commit",
+      "novel_config_change",
+      "skill_rule_change"
+    ]
+  },
+
+  "user_persona": {
+    "_comment": "目标用户画像。AI根据此画像调整协作风格。",
+    "platform": "番茄小说",
+    "writing_pace": "日更4000-6000字",
+    "skill_level": "有网文写作经验，正在适应AI辅助",
+    "pain_points": [
+      "更新压力大，需要AI提速但不想崩人设",
+      "番茄平台AI内容泛滥，不借助工具卷不过AI量产号",
+      "长篇后期人物漂移、伏笔丢失"
+    ],
+    "ai_role": "创作辅助者——追问盲点、给候选、起草文本、校硬伤。创作决策由人做。",
+    "quality_bar": "番茄平台留存率标准——高于纯AI量产文，不追求起点签约级文学性"
+  },
+
+  "iron_rules": {
+    "_comment": "v3: 12 条铁律改为编号制 + severity 等级（block=硬拦截 / warn=警告 / info=提示）。",
+    "enabled": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+    "severity": {
+      "1": "block",
+      "2": "block",
+      "3": "block",
+      "4": "block",
+      "5": "block",
+      "6": "block",
+      "7": "block",
+      "8": "block",
+      "9": "block",
+      "10": "block",
+      "11": "warn",
+      "12": "warn"
+    },
+    "_v2_alias": {
+      "_comment": "v2 兼容：旧布尔字段保留便于人读对照。AI 主流程只读 enabled 与 severity。",
+      "1": "mc_no_death",
+      "2": "mc_no_replacement",
+      "3": "no_ntr",
+      "4": "no_explicit_sex",
+      "5": "no_real_politics",
+      "6": "info_anonymization",
+      "7": "no_crime_drugs_gambling",
+      "8": "no_real_ethnic_religion",
+      "9": "no_gore_glorification",
+      "10": "no_minor_inappropriate",
+      "11": "fictional_world_safety",
+      "12": "no_negative_values"
+    }
+  },
+
+  "review_density": {
+    "_comment": "审核密度。exhaustive=每章全审 / relaxed=每5章审一次 / minimal=仅地图结束审",
+    "chapter_review": "exhaustive",
+    "map_review": "always",
+    "periodic_review_interval": 50,
+    "final_review": "always",
+    "cross_model_review": {"enabled": false, "model": ""}
+  },
+
+  "ai_flavor": {
+    "_comment": "v3 重命名（原 ai_flavor_rules）。AI味检测规则。",
+    "red_line_grep_threshold": 0,
+    "hard_pattern_max_per_chapter": 3,
+    "soft_read_aloud": true,
+    "_v2_alias": {
+      "_comment": "v2 字段名映射。",
+      "red_line_grep_threshold": "transition_word_threshold",
+      "hard_pattern_max_per_chapter": "template_emotion_threshold",
+      "soft_read_aloud": "explain_sentence_threshold",
+      "adjective_piling_threshold": "adjective_piling_threshold"
+    }
+  },
+
+  "writing_preferences": {
+    "_comment": "v3 已不再主动修改此块；保留以便旧项目降级或人审对照。AI 主流程不读。",
+    "chapter_word_count": [3000, 5000],
+    "protagonist_starting_age": 18,
+    "pov": "third_person_limited",
+    "style_notes": ""
+  },
+
+  "quality_thresholds": {
+    "_comment": "章节评分标准。review_density=minimal时仅检查低于阈值的章节。",
+    "coherence_pass": 7,
+    "span_pass": 7,
+    "conflict_pass": 7,
+    "overall_pass": 21,
+    "show_quality_warning": true
+  },
+
+  "chapter_requirements": {
+    "_comment": "章节硬性指标。适合慢热文/文学短篇时调低。",
+    "min_word_count": 3000,
+    "max_word_count": 5000,
+    "min_conflicts_per_chapter": 1,
+    "min_satisfaction_points_per_chapter": 1,
+    "min_climax_interval": 3,
+    "strict_mode": false,
+    "_strict_mode_note": "true=强制满足所有指标(不达标拒绝进入下一章) / false=指标仅作参考警告"
+  }
+}

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Inspiration"
+  short_description: "Capture and discuss novel ideas"
+  default_prompt: "Use $inspiration to capture this idea, classify it, discuss objections, and write an inspiration card."

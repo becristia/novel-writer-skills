@@ -1,0 +1,4 @@
+interface:
+  display_name: "Novel Structure"
+  short_description: "Plan main plot, maps, and chapters"
+  default_prompt: "Use $novel-structure to build the main plot, map plan, and chapter outline for this novel project."

@@ -23,6 +23,7 @@ Thumbs.db
 .idea/
 
 # Temp
+.tmp/
 *.tmp
 *.log
 __pycache__/

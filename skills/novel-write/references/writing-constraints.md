@@ -5,10 +5,10 @@
 ## 使用路由
 
 - 阶段 B 红线检查前先读 `novel-config.json` 的启用项和 severity。
-- 命中 block 时修订并重跑；命中 warn 时列为人审疑点。
+- 只检查编号在 `iron_rules.enabled` 中的规则，再读取 `iron_rules.severity["编号"]`：block 命中时修订并重跑，warn 列为人审疑点，info 只记录提示。
 - 不要把禁用规则当作硬拦截。
 
-以下规则默认为**绝对约束**。各条规则可通过项目根目录的 `novel-config.json` → `iron_rules` 单独开关。
+以下规则的启用范围与拦截强度以项目根目录 `novel-config.json` 为准。正文中的“不允许”等措辞描述规则内容，是否硬拦截仍取决于该规则的 severity。
 
 面向中文网络文学连载平台（起点/番茄/七猫等）时，建议全部开启。如面向非网文平台或文学性创作，可关闭不适用的规则。
 
@@ -16,20 +16,22 @@ AI 自检时先读取 `novel-config.json`，仅检查已启用的规则。
 
 ## 配置映射表
 
-| 规则 | config 键 | 启用时检查 | 禁用时 |
-|------|----------|----------|--------|
-| 一、主角不死 | `iron_rules.mc_no_death` | 检查结局存活 | 跳过 |
-| 二、不换主角 | `iron_rules.mc_no_replacement` | 检查主角贯穿始终 | 跳过 |
-| 三、禁止牛头人 | `iron_rules.no_ntr` | 检查CP情节 | 跳过 |
-| 四a、不涉黄 | `iron_rules.no_explicit_sex` | 检查性描写留白 | 跳过 |
-| 四b、不涉政 | `iron_rules.no_real_politics` | 检查政治影射 | 跳过 |
-| 五、信息屏蔽 | `iron_rules.info_anonymization` | 检查真实人名/地名/事件 | 跳过 |
-| 六、不涉黑毒赌 | `iron_rules.no_crime_drugs_gambling` | 检查犯罪/毒品/赌博描写 | 跳过 |
-| 七、民族宗教 | `iron_rules.no_real_ethnic_religion` | 检查现实民族/宗教映射 | 跳过 |
-| 八、暴力美化 | `iron_rules.no_gore_glorification` | 检查残忍描写 | 跳过 |
-| 九、未成年人 | `iron_rules.no_minor_inappropriate` | 检查未成年不良内容 | 跳过 |
-| 十、架空安全 | `iron_rules.fictional_world_safety` | 检查架空世界映射现实 | 跳过 |
-| 十一、负面价值观 | `iron_rules.no_negative_values` | 检查负面价值观宣扬 | 跳过 |
+| 编号 | 规则 | 等级读取 | 启用时检查 |
+|------|------|----------|------------|
+| 1 | 一、主角不死 | `iron_rules.severity["1"]` | 检查结局存活 |
+| 2 | 二、不换主角 | `iron_rules.severity["2"]` | 检查主角贯穿始终 |
+| 3 | 三、禁止牛头人 | `iron_rules.severity["3"]` | 检查 CP 情节 |
+| 4 | 四 a、不涉黄 | `iron_rules.severity["4"]` | 检查性描写留白 |
+| 5 | 四 b、不涉政 | `iron_rules.severity["5"]` | 检查政治影射 |
+| 6 | 五、信息屏蔽 | `iron_rules.severity["6"]` | 检查真实人名、地名、事件 |
+| 7 | 六、不涉黑毒赌 | `iron_rules.severity["7"]` | 检查犯罪、毒品、赌博描写 |
+| 8 | 七、民族宗教 | `iron_rules.severity["8"]` | 检查现实民族、宗教映射 |
+| 9 | 八、暴力美化 | `iron_rules.severity["9"]` | 检查残忍描写 |
+| 10 | 九、未成年人 | `iron_rules.severity["10"]` | 检查未成年不良内容 |
+| 11 | 十、架空安全 | `iron_rules.severity["11"]` | 检查架空世界映射现实 |
+| 12 | 十一、负面价值观 | `iron_rules.severity["12"]` | 检查负面价值观宣扬 |
+
+`enabled` 中的编号使用整数，`severity` 的键使用字符串。未启用的编号直接跳过；`iron_rules._v2_alias` 仅供人读对照，不作为开关。
 
 ---
 

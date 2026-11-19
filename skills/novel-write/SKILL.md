@@ -67,7 +67,7 @@ Read 对应地图文件中的本章细纲：章节元数据（POV / 场景地点
 
 ### 步骤④：系统自检（5 维）
 
-按顺序：红线（12 铁律）→ 硬性（AI 味 Grep）→ 软性（朗读）→ 设定（Grep 漂移）→ 伏笔（对照 `追踪/伏笔.md`）。任一红灯 → 局部修订 → 重跑；3 次命中 → 紧急关卡。
+按顺序：红线（仅检查 `iron_rules.enabled` 中的编号，按 `severity` 区分 block / warn / info）→ 硬性（AI 味 Grep）→ 软性（朗读）→ 设定（Grep 漂移）→ 伏笔（对照 `追踪/伏笔.md`）。任一硬拦截红灯 → 局部修订 → 重跑；3 次命中 → 紧急关卡。warn 列为人审疑点，info 只提示。
 自检通过后只建议 `workflow_gates.chapters.<场景任务ID>.self_check_passed = true`，再提交作者。
 
 完整规则见 `[details] → references/3-stage-tdd.md §2 阶段 B`

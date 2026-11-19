@@ -36,7 +36,7 @@ M4 依赖 M3（物品等级体系）。物品的"持有者"来自 M2 人物。
 
 ### 步骤④ validation
 
-- 跑 `validate_assets.py --template item`（Phase 1 模板）
+- 对每个实际物品卡运行 `python3 /path/to/novel-writer-skills/scripts/validate_assets.py --template item --file /path/to/novel/知识库/物品/X.md`；将示例路径替换为真实绝对路径
 - item ↔ spec 一致性 grep
 - 跑 `validate_novel_design_skill.py --template m4-item`
 

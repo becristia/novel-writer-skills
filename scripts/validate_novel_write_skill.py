@@ -9,6 +9,7 @@
 from __future__ import annotations
 
 import argparse
+import json
 import re
 import sys
 from pathlib import Path
@@ -169,11 +170,15 @@ def validate_writing_constraints() -> None:
     # 必须提及 severity（v3 新增）
     _require("severity" in content.lower(),
              "writing-constraints: 缺 'severity' 字段说明（v3 新增）")
-    # 必须有 12 条铁律（mc_no_death 等 v2 字段名）
-    for rule_key in ("mc_no_death", "no_ntr", "no_real_politics",
-                     "info_anonymization", "fictional_world_safety"):
-        _require(rule_key in content,
-                 f"writing-constraints: 缺铁律字段 '{rule_key}'（12 条覆盖不完整）")
+    config_path = SKILL_DIR.parent.parent / "assets" / "novel-config-template.json"
+    config = json.loads(_read(config_path))
+    _require("iron_rules.enabled" in content,
+             "writing-constraints: 缺编号启用列表 iron_rules.enabled")
+    for rule_id in config["iron_rules"]["enabled"]:
+        _require(f'iron_rules.severity["{rule_id}"]' in content,
+                 f"writing-constraints: 缺编号 {rule_id} 的 severity 映射")
+    for level in ("block", "warn", "info"):
+        _require(level in content, f"writing-constraints: 缺 {level} 处理说明")
 
 
 def validate_knowledge_extraction() -> None:

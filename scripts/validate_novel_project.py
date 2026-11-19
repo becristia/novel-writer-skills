@@ -11,6 +11,11 @@ import re
 import sys
 from pathlib import Path
 
+if __package__:
+    from . import validate_assets
+else:
+    import validate_assets
+
 ALLOWED_TASK_STATUSES = {
     "planned",
     "drafting",
@@ -28,6 +33,15 @@ REQUIRED_CHAPTER_GATE_FIELDS = [
     "knowledge_reviewed",
     "blocked_reason",
 ]
+
+PHASES = ("ideate", "design", "structure", "write")
+TASK_GATE_REQUIREMENTS = {
+    "drafting": "outline_ready",
+    "self_checked": "draft_ready",
+    "human_review": "self_check_passed",
+    "finalized": "human_finalized",
+    "kb_reviewed": "knowledge_reviewed",
+}
 
 
 class ValidationError(Exception):
@@ -54,11 +68,72 @@ def _load_progress(project_root: Path, errors: list[str]) -> dict:
     return data
 
 
+def _object(data: dict, key: str, errors: list[str], label: str = "") -> dict:
+    value = data.get(key)
+    if not isinstance(value, dict):
+        errors.append(f"{label + '.' if label else ''}{key}: missing object")
+        return {}
+    return value
+
+
+def _boolean(data: dict, key: str, label: str, errors: list[str]) -> None:
+    if type(data.get(key)) is not bool:
+        errors.append(f"{label}.{key}: must be a JSON boolean")
+
+
+def _chapter_gate(gate: dict, label: str, errors: list[str]) -> None:
+    flags = REQUIRED_CHAPTER_GATE_FIELDS[:-1]
+    for index, field in enumerate(flags):
+        _boolean(gate, field, label, errors)
+        if gate.get(field) is True:
+            for previous in flags[:index]:
+                if gate.get(previous) is not True:
+                    errors.append(f"{label}.{field}: requires {previous}=true")
+    for field in ("chapter_id", "scene_task_id", "status", "blocked_reason", "approved_by", "approved_at"):
+        if not isinstance(gate.get(field), str):
+            errors.append(f"{label}.{field}: must be a string")
+    for field in ("chapter_id", "scene_task_id", "status"):
+        if isinstance(gate.get(field), str) and not gate[field].strip():
+            errors.append(f"{label}.{field}: must not be empty")
+
+
 def validate_progress_gates(progress: dict, errors: list[str]) -> None:
-    gates = progress.get("workflow_gates")
-    if not isinstance(gates, dict):
-        errors.append("workflow_gates: missing object")
-        return
+    gates = _object(progress, "workflow_gates", errors)
+    checks = _object(progress, "checks", errors)
+    phases = _object(progress, "phases", errors)
+
+    for index, phase in enumerate(PHASES):
+        phase_data = _object(phases, phase, errors, "phases")
+        status = phase_data.get("status")
+        if not isinstance(status, str) or status not in {"pending", "in_progress", "done"}:
+            errors.append(f"phases.{phase}.status: must be pending / in_progress / done")
+        if status in ("in_progress", "done"):
+            for previous in PHASES[:index]:
+                if checks.get(previous + "_done") is not True:
+                    errors.append(f"phases.{phase}: requires checks.{previous}_done=true")
+        if phase == "write":
+            continue
+        check = phase + "_done"
+        _boolean(checks, check, "checks", errors)
+        stage = _object(gates, phase, errors, "workflow_gates")
+        _boolean(stage, "human_approved", f"workflow_gates.{phase}", errors)
+        if phase == "structure":
+            _boolean(stage, "outline_ready", "workflow_gates.structure", errors)
+        if checks.get(check) is True or status == "done":
+            if checks.get(check) is not True or status != "done":
+                errors.append(f"checks.{check}: must agree with phases.{phase}.status=done")
+            if stage.get("human_approved") is not True:
+                errors.append(f"workflow_gates.{phase}.human_approved: requires true for phase completion")
+            if phase == "structure" and stage.get("outline_ready") is not True:
+                errors.append("workflow_gates.structure: completion requires outline_ready=true")
+
+    current = progress.get("current_phase")
+    if not isinstance(current, str) or current not in PHASES:
+        errors.append("current_phase: must be ideate / design / structure / write")
+    else:
+        for previous in PHASES[:PHASES.index(current)]:
+            if checks.get(previous + "_done") is not True:
+                errors.append(f"current_phase={current}: requires checks.{previous}_done=true")
 
     if "chapter" in gates:
         errors.append("workflow_gates: do not use singleton workflow_gates.chapter")
@@ -71,9 +146,7 @@ def validate_progress_gates(progress: dict, errors: list[str]) -> None:
     if not isinstance(template, dict):
         errors.append("workflow_gates: missing chapter_gate_template")
     else:
-        for field in REQUIRED_CHAPTER_GATE_FIELDS:
-            if field not in template:
-                errors.append(f"workflow_gates: chapter_gate_template missing {field}")
+        _chapter_gate(template, "workflow_gates.chapter_gate_template", errors)
 
     if not isinstance(chapters, dict):
         return
@@ -83,13 +156,11 @@ def validate_progress_gates(progress: dict, errors: list[str]) -> None:
             errors.append(f"workflow_gates.chapters.{task_id}: gate must be an object")
             continue
         scene_task_id = gate.get("scene_task_id")
-        if scene_task_id and scene_task_id != task_id:
+        if scene_task_id != task_id:
             errors.append(
                 f"workflow_gates.chapters.{task_id}: scene_task_id mismatch ({scene_task_id})"
             )
-        for field in REQUIRED_CHAPTER_GATE_FIELDS:
-            if field not in gate:
-                errors.append(f"workflow_gates.chapters.{task_id}: missing {field}")
+        _chapter_gate(gate, f"workflow_gates.chapters.{task_id}", errors)
 
 
 def _table_rows(section: str) -> list[list[str]]:
@@ -105,46 +176,76 @@ def _table_rows(section: str) -> list[list[str]]:
     return rows
 
 
-def validate_writing_tasks(project_root: Path, progress: dict, errors: list[str]) -> None:
+def _read_matrix(path: Path, id_column: str, prefix: str, columns: tuple[str, ...],
+                 errors: list[str]) -> dict[str, dict[str, str]]:
+    if not path.is_file():
+        return {}
+    for match in re.finditer(r"(?:^[ \t]*\|[^\n]*\|[ \t]*(?:\n|$))+", _read(path), re.M):
+        rows = _table_rows(match.group())
+        if not rows or not all(column in rows[0] for column in (id_column, *columns)):
+            continue
+        header = rows[0]
+        records = {}
+        for row in rows[1:]:
+            if len(row) != len(header):
+                errors.append(f"tracking: {path.name} has a malformed matrix row")
+                continue
+            record = dict(zip(header, row))
+            record_id = record[id_column]
+            if not record_id:
+                continue
+            if not re.fullmatch(rf"{prefix}-\d+", record_id):
+                errors.append(f"tracking: invalid {id_column} {record_id!r}")
+            elif record_id in records:
+                errors.append(f"tracking: duplicate {id_column} {record_id}")
+            else:
+                records[record_id] = record
+        return records
+    errors.append(f"tracking: {path.name} missing {id_column} matrix header")
+    return {}
+
+
+def validate_writing_tasks(project_root: Path, progress: dict, errors: list[str]) -> dict:
     task_path = project_root / "追踪" / "写作任务.md"
-    structure_done = progress.get("checks", {}).get("structure_done") is True
-    write_active = progress.get("phases", {}).get("write", {}).get("status") == "in_progress"
+    checks = progress.get("checks")
+    phases = progress.get("phases")
+    structure_done = isinstance(checks, dict) and checks.get("structure_done") is True
+    write = phases.get("write") if isinstance(phases, dict) else None
+    write_active = isinstance(write, dict) and write.get("status") == "in_progress"
     if not task_path.is_file():
         if structure_done or write_active or (project_root / "追踪").exists():
             errors.append("tracking: missing 追踪/写作任务.md")
-        return
+        return {}
 
-    rows = _table_rows(_read(task_path))
-    header_index = next(
-        (index for index, row in enumerate(rows) if "场景任务ID" in row and "当前状态" in row),
-        None,
-    )
-    if header_index is None:
-        errors.append("tracking: 追踪/写作任务.md missing task matrix header")
-        return
-
-    header = rows[header_index]
-    task_id_index = header.index("场景任务ID")
-    status_index = header.index("当前状态")
-
-    for row in rows[header_index + 1:]:
-        if len(row) <= max(task_id_index, status_index):
-            continue
-        task_id = row[task_id_index]
-        status = row[status_index]
-        if not task_id or task_id == "场景任务ID":
-            continue
-        matched = [item for item in ALLOWED_TASK_STATUSES if item in status]
+    tasks = _read_matrix(task_path, "场景任务ID", "WT", ("当前状态", "情节线ID"), errors)
+    gates = progress.get("workflow_gates")
+    chapters = gates.get("chapters", {}) if isinstance(gates, dict) else {}
+    for task_id, task in tasks.items():
+        status = task["当前状态"]
         if status not in ALLOWED_TASK_STATUSES:
             errors.append(
                 f"tracking: {task_id} 当前状态 must be one of {sorted(ALLOWED_TASK_STATUSES)}, got {status!r}"
             )
             continue
-        if len(matched) != 1 or "/" in status or "->" in status:
-            errors.append(f"tracking: {task_id} 当前状态 must contain exactly one status")
+        required = TASK_GATE_REQUIREMENTS.get(status)
+        gate = chapters.get(task_id) if isinstance(chapters, dict) else None
+        if required and (not isinstance(gate, dict) or gate.get(required) is not True):
+            errors.append(f"tracking: {task_id} status {status} requires {required}=true")
+    return tasks
 
 
-def validate_outline_bindings(project_root: Path, errors: list[str]) -> None:
+def _binding_ids(content: str, field: str, prefix: str) -> set[str]:
+    values = []
+    for row in _table_rows(content):
+        if len(row) >= 2 and row[0].strip("*` ") == field:
+            values.append(row[1])
+    values.extend(re.findall(rf"^[ \t]*(?:[-*][ \t]+)?(?:\*\*)?{field}(?:\*\*)?[ \t]*[:：][ \t]*(.*)$",
+                             content, re.M))
+    return set(re.findall(rf"\b{prefix}-\d+\b", "\n".join(values)))
+
+
+def validate_outline_bindings(project_root: Path, tasks: dict, plotlines: dict,
+                              errors: list[str]) -> None:
     outline_root = project_root / "03-大纲"
     if not outline_root.exists():
         return
@@ -154,13 +255,40 @@ def validate_outline_bindings(project_root: Path, errors: list[str]) -> None:
         if "细纲" not in path.name:
             continue
         content = _read(path)
-        if "核心事件" not in content and "章节元数据" not in content:
-            continue
         rel_path = path.relative_to(project_root)
-        if "情节线ID" not in content:
-            errors.append(f"outline: {rel_path} missing 情节线ID")
-        if "场景任务ID" not in content:
-            errors.append(f"outline: {rel_path} missing 场景任务ID")
+        headings = list(re.finditer(r"^#{1,6}[ \t]+(第[ \t]*[^\n章]+章[^\n]*)$", content, re.M))
+        if not headings:
+            errors.append(f"outline: {rel_path} missing chapter headings")
+            continue
+        for index, heading in enumerate(headings):
+            end = headings[index + 1].start() if index + 1 < len(headings) else len(content)
+            chapter = content[heading.end():end]
+            label = f"outline: {rel_path} {heading.group(1)}"
+            plot_ids = _binding_ids(chapter, "情节线ID", "PL")
+            task_ids = _binding_ids(chapter, "场景任务ID", "WT")
+            for field, ids, matrix in (("情节线ID", plot_ids, plotlines), ("场景任务ID", task_ids, tasks)):
+                if not ids:
+                    errors.append(f"{label}: missing nonempty {field}")
+                for record_id in sorted(ids):
+                    if record_id not in matrix:
+                        name = "情节线" if field == "情节线ID" else "写作任务"
+                        errors.append(f"{label}: {record_id} not found in 追踪/{name}.md")
+            for task_id in task_ids & tasks.keys():
+                task_plot_ids = set(re.findall(r"\bPL-\d+\b", tasks[task_id]["情节线ID"]))
+                if not task_plot_ids or not task_plot_ids <= plot_ids:
+                    errors.append(f"{label}: {task_id} plotline binding mismatch")
+
+
+def validate_live_assets(project_root: Path, errors: list[str]) -> None:
+    targets = [("novel-config", project_root / "novel-config.json")]
+    for kind, directory in (("character", "人物"), ("location", "地点"),
+                            ("faction", "势力"), ("item", "物品"), ("concept", "概念")):
+        targets.extend((kind, path) for path in sorted((project_root / "知识库" / directory).rglob("*.md")))
+    for kind, path in targets:
+        try:
+            validate_assets.VALIDATORS[kind](path)
+        except (validate_assets.ValidationError, OSError, ValueError) as exc:
+            errors.append(f"assets: {path.relative_to(project_root)}: {exc}")
 
 
 def validate_project(project_root: Path) -> None:
@@ -169,10 +297,15 @@ def validate_project(project_root: Path) -> None:
         raise ValidationError(f"project root not found: {project_root}")
 
     progress = _load_progress(project_root, errors)
-    if progress:
-        validate_progress_gates(progress, errors)
-    validate_writing_tasks(project_root, progress, errors)
-    validate_outline_bindings(project_root, errors)
+    validate_progress_gates(progress, errors)
+    validate_live_assets(project_root, errors)
+    tasks = validate_writing_tasks(project_root, progress, errors)
+    plotlines = _read_matrix(project_root / "追踪" / "情节线.md", "情节线ID", "PL", (), errors)
+    for task_id, task in tasks.items():
+        ids = set(re.findall(r"\bPL-\d+\b", task["情节线ID"]))
+        if not ids or not ids <= plotlines.keys():
+            errors.append(f"tracking: {task_id} references missing 情节线ID")
+    validate_outline_bindings(project_root, tasks, plotlines, errors)
 
     if errors:
         raise ValidationError("\n".join(f"- {error}" for error in errors))
@@ -185,7 +318,7 @@ def main() -> int:
 
     try:
         validate_project(args.project_root.resolve())
-    except ValidationError as exc:
+    except (ValidationError, OSError, UnicodeError) as exc:
         print(f"FAIL project: {exc}", file=sys.stderr)
         return 1
 

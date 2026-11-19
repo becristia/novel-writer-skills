@@ -36,14 +36,11 @@ cat novel-config.json
 ### 步骤③：用户确认后写入 + 校验
 
 ```bash
-# 写回
-python -c "import json; json.dump(<new>, open('novel-config.json', 'w', encoding='utf-8'), ensure_ascii=False, indent=2)"
-
-# 校验
-python scripts/validate_assets.py --template novel-config
+# 校验刚修改的实际配置；将示例路径替换为技能仓库和小说项目的真实绝对路径
+python3 /path/to/novel-writer-skills/scripts/validate_assets.py --template novel-config --file /path/to/novel/novel-config.json
 ```
 
-显示 diff 后等用户确认。
+按已确认的 diff 编辑实际配置，再运行上述校验并展示结果。省略 `--file` 只检查仓库模板，不能作为此次项目配置变更的验证结果；校验失败时停止后续流程。
 
 ---
 
@@ -63,8 +60,8 @@ python scripts/validate_assets.py --template novel-config
 
 ## 4. 边界处理
 
-- **v2 字段读写**（`iron_rules._v2_alias`, `writing_preferences`）允许读写
-- **v3 字段必须有 `_v2_alias` 对应**：未在 alias 出现的新字段，AI 应提示"这是新设定，建议加 decision log"
+- **v2 映射**：`iron_rules._v2_alias` 只供人读对照；实际开关使用 `iron_rules.enabled`，等级使用 `iron_rules.severity`。保留的 `writing_preferences` 不作为 v3 主流程配置入口
+- **新字段**：新增配置字段需同步模板、消费方和校验器；不要求人为补造旧版 alias
 - **validator 失败**：阻塞，必须修复（不允许"忽略"通过）
 
 ---

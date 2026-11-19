@@ -58,6 +58,7 @@ novel-meta 不参与章节写作循环。它是 v3 工作流的"自我演进"通
 2. 目标 skill 存在（用户说的 "novel-X" 在 `skills/novel-X/SKILL.md`）
 3. 若涉及小说项目配置，项目根 `novel-config.json` 存在，格式对齐 `assets/novel-config-template.json`
 4. 若涉及模板，`assets/*.md` 可读
+   M4 的技能仓库审计以模板为输入，不要求小说项目配置或进度；真实项目是可选样本，未提供时标记运行效果未验证。
 5. 若涉及写入、提交、改配置或改规则，先展示范围和风险，等用户确认后执行
 
 ## 4 M 子流程概览

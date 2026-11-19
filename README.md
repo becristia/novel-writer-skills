@@ -269,6 +269,22 @@ novel-config.json      ← 项目配置、铁律、AI味阈值
 | **你（每50章）** | 人物漂移、伏笔审计、世界一致性——大局复盘 |
 | **你（终审）** | 5维度最终裁决——通过/有条件通过/退回 |
 
+## 校验
+
+在技能仓库中运行各 `scripts/validate_*.py --all` 检查技能与模板，运行 `python3 -m unittest discover -s scripts -p 'test_*.py'` 执行校验器回归测试。
+
+检查小说项目时，使用技能仓库内脚本的实际路径，并将参数指向小说项目或刚修改的文件：
+
+```bash
+python3 /path/to/novel-writer-skills/scripts/validate_novel_project.py --project-root /path/to/novel
+python3 /path/to/novel-writer-skills/scripts/validate_assets.py --template novel-config --file /path/to/novel/novel-config.json
+python3 /path/to/novel-writer-skills/scripts/validate_assets.py --template character --file /path/to/novel/知识库/人物/角色名.md
+```
+
+`--file` 支持 `novel-config`、`character`、`location`、`faction`、`item`、`concept`。省略它时只检查仓库模板。项目检查会核对实际配置、正式词条、门禁顺序、阶段完成状态，以及每章细纲与情节线、写作任务矩阵的绑定。
+
+技能仓库自身的审计使用模板即可；只有审查真实小说的运行状态时才需要指定小说项目。
+
 ## License
 
 MIT

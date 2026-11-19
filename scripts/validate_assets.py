@@ -3,6 +3,7 @@
 用法：
     python scripts/validate_assets.py --template progress
     python scripts/validate_assets.py --all
+    python scripts/validate_assets.py --template novel-config --file /path/to/novel/novel-config.json
 """
 from __future__ import annotations
 
@@ -107,20 +108,53 @@ def validate_progress() -> None:
                  f"progress: tracking-writing-tasks-template.md 缺 '{keyword}'")
 
 
-def validate_novel_config() -> None:
-    """校验 novel-config-template.json 含 v3 必填字段。"""
-    path = ASSETS_DIR / "novel-config-template.json"
-    data = json.loads(path.read_text(encoding="utf-8"))
+def _validate_config_shape(data, reference, label: str) -> None:
+    """Use the template's field types, without requiring its default values."""
+    _require(type(data) is type(reference), f"{label}: 类型应为 {type(reference).__name__}")
+    if isinstance(reference, dict):
+        for key, value in reference.items():
+            if key.startswith("_") or (key == "writing_preferences" and key not in data):
+                continue
+            _require(key in data, f"{label}: 缺 {key}")
+            _validate_config_shape(data[key], value, f"{label}.{key}")
+    elif isinstance(reference, list) and reference:
+        for index, value in enumerate(data):
+            _validate_config_shape(value, reference[0], f"{label}[{index}]")
+
+
+def validate_novel_config(path: Path | None = None) -> None:
+    """Validate the default template or the explicitly selected live config."""
+    reference = json.loads((ASSETS_DIR / "novel-config-template.json").read_text(encoding="utf-8"))
+    data = reference if path is None else json.loads(path.read_text(encoding="utf-8"))
+    _validate_config_shape(data, reference, "novel-config")
 
     iron = data.get("iron_rules", {})
     _require("enabled" in iron, "novel-config.iron_rules: 缺 enabled 数组（v3 新增）")
     _require(isinstance(iron["enabled"], list), "novel-config.iron_rules.enabled: 必须是数组")
-    _require(len(iron["enabled"]) == 12, "novel-config.iron_rules.enabled: 必须含 12 条")
+    enabled = iron["enabled"]
+    _require(all(type(rule_id) is int and 1 <= rule_id <= 12 for rule_id in enabled),
+             "novel-config.iron_rules.enabled: 编号必须是 1-12 的整数")
+    _require(len(enabled) == len(set(enabled)), "novel-config.iron_rules.enabled: 编号不得重复")
+    if path is None:
+        _require(len(enabled) == 12, "novel-config.iron_rules.enabled: 默认模板必须启用全部 12 条")
     _require("severity" in iron, "novel-config.iron_rules: 缺 severity 字段（v3 新增）")
+    for rule_id, severity in iron["severity"].items():
+        if rule_id.startswith("_"):
+            continue
+        _require(rule_id in {str(number) for number in range(1, 13)},
+                 f"novel-config.iron_rules.severity: 未知编号 {rule_id}")
+        _require(severity in {"block", "warn", "info"},
+                 f"novel-config.iron_rules.severity.{rule_id}: 必须是 block / warn / info")
 
     ai_flavor = data.get("ai_flavor", {})
     for key in ("red_line_grep_threshold", "hard_pattern_max_per_chapter", "soft_read_aloud"):
         _require(key in ai_flavor, f"novel-config.ai_flavor: 缺 {key}")
+    for key in ("red_line_grep_threshold", "hard_pattern_max_per_chapter"):
+        _require(ai_flavor[key] >= 0, f"novel-config.ai_flavor.{key}: 不得为负数")
+
+    chapter = data["chapter_requirements"]
+    _require(0 < chapter["min_word_count"] <= chapter["max_word_count"],
+             "novel-config.chapter_requirements: 字数下限须大于零且不超过上限")
 
     authority = data.get("creative_authority", {})
     _require(authority, "novel-config.creative_authority: 缺人类创作主权配置")
@@ -129,7 +163,7 @@ def validate_novel_config() -> None:
                  f"novel-config.creative_authority.{key}: 必须是非空数组")
 
 
-def _validate_card_template(path: Path, name: str) -> None:
+def _validate_card_template(path: Path, name: str, *, live: bool = False) -> None:
     """校验 card 模板含 v3 '决策日志关联' 区。"""
     content = path.read_text(encoding="utf-8")
     _require("决策日志关联" in content,
@@ -140,26 +174,36 @@ def _validate_card_template(path: Path, name: str) -> None:
              f"{name}: 至少 3 个 '**字段名**：' 速查行（当前 {len(grep_fields)}）")
     for field in ("**词条ID**：", "**别名**：", "**正史状态**："):
         _require(field in content, f"{name}: 缺稳定索引字段 {field}")
+    if live:
+        template = (ASSETS_DIR / f"{name}-card-template.md").read_text(encoding="utf-8")
+        current_state = template.split("## 当前状态", 1)[1].split("\n## ", 1)[0]
+        for field in re.findall(r"\*\*[^*]+\*\*：", current_state):
+            _require(field in content, f"{name}: 缺当前状态字段 {field}")
+        prefixes = {"character": "CHAR", "location": "LOC", "faction": "FAC", "item": "ITEM", "concept": "CON"}
+        _require(re.search(rf"\*\*词条ID\*\*：\s*{prefixes[name]}-\d+\s*$", content, re.M),
+                 f"{name}: 词条ID 应为 {prefixes[name]}-数字")
+        _require(re.search(r"\*\*正史状态\*\*：\s*(正式|待复核|已废弃)\s*$", content, re.M),
+                 f"{name}: 正史状态必须填写一个实际状态")
 
 
-def validate_character() -> None:
-    _validate_card_template(ASSETS_DIR / "character-card-template.md", "character")
+def validate_character(path: Path | None = None) -> None:
+    _validate_card_template(path or ASSETS_DIR / "character-card-template.md", "character", live=path is not None)
 
 
-def validate_location() -> None:
-    _validate_card_template(ASSETS_DIR / "location-card-template.md", "location")
+def validate_location(path: Path | None = None) -> None:
+    _validate_card_template(path or ASSETS_DIR / "location-card-template.md", "location", live=path is not None)
 
 
-def validate_faction() -> None:
-    _validate_card_template(ASSETS_DIR / "faction-card-template.md", "faction")
+def validate_faction(path: Path | None = None) -> None:
+    _validate_card_template(path or ASSETS_DIR / "faction-card-template.md", "faction", live=path is not None)
 
 
-def validate_item() -> None:
-    _validate_card_template(ASSETS_DIR / "item-card-template.md", "item")
+def validate_item(path: Path | None = None) -> None:
+    _validate_card_template(path or ASSETS_DIR / "item-card-template.md", "item", live=path is not None)
 
 
-def validate_concept() -> None:
-    _validate_card_template(ASSETS_DIR / "concept-card-template.md", "concept")
+def validate_concept(path: Path | None = None) -> None:
+    _validate_card_template(path or ASSETS_DIR / "concept-card-template.md", "concept", live=path is not None)
 
 
 def validate_index() -> None:
@@ -218,6 +262,12 @@ def validate_project_contract() -> None:
     for pattern, message in forbidden_patterns.items():
         _require(re.search(pattern, combined) is None,
                  f"project-contract: 发现{message}（pattern: {pattern}）")
+    config = json.loads((ASSETS_DIR / "novel-config-template.json").read_text(encoding="utf-8"))
+    for key, alias in config["iron_rules"]["_v2_alias"].items():
+        if key.startswith("_"):
+            continue
+        _require(re.search(rf"\biron_rules\.{re.escape(alias)}\b", combined) is None,
+                 f"project-contract: 消费方仍引用旧铁律字段 iron_rules.{alias}")
 
 
 VALIDATORS = {
@@ -238,7 +288,11 @@ def main() -> int:
     parser = argparse.ArgumentParser(description="v3 模板校验")
     parser.add_argument("--template", choices=list(VALIDATORS.keys()))
     parser.add_argument("--all", action="store_true")
+    parser.add_argument("--file", type=Path, help="实际配置或词条文件；必须配合 --template 使用")
     args = parser.parse_args()
+    file_targets = {"novel-config", "character", "location", "faction", "item", "concept"}
+    if args.file is not None and (args.all or args.template not in file_targets):
+        parser.error("--file 只支持 --template novel-config/character/location/faction/item/concept，不能与 --all 合用")
 
     targets = list(VALIDATORS.keys()) if args.all else (
         [args.template] if args.template else []
@@ -250,8 +304,11 @@ def main() -> int:
     failed = 0
     for name in targets:
         try:
-            VALIDATORS[name]()
-            print(f"OK  {name}")
+            if args.file is None:
+                VALIDATORS[name]()
+            else:
+                VALIDATORS[name](args.file)
+            print(f"OK  {name}" + (f": {args.file.resolve()}" if args.file is not None else ""))
         except ValidationError as e:
             print(f"FAIL {name}: {e}", file=sys.stderr)
             failed += 1

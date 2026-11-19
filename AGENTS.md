@@ -47,6 +47,7 @@ Long-form writing must separate durable rules, story canon, chapter inputs, and 
 - `追踪/情节线.md`: track main plots, subplots, relationship arcs, character arcs, and foreshadowing lines by `情节线ID`.
 - `追踪/写作任务.md`: track chapter/scene work by `场景任务ID`, status, gate, next action, and responsible owner.
 - L3 chapter outlines must cite `情节线ID` and `场景任务ID` when the chapter advances a known line or task.
+- Each chapter uses its own Markdown heading and nonempty matrix bindings. Validate every chapter separately and resolve its IDs against the plotline and writing-task matrices.
 - novel-write must update task status only as a proposal unless the transition is purely mechanical and non-final. Finalization and knowledge review always require human approval.
 - Each writing task has exactly one current status: `planned -> drafting -> self_checked -> human_review -> finalized -> kb_reviewed`.
 
@@ -60,6 +61,7 @@ Long-form writing must separate durable rules, story canon, chapter inputs, and 
 - Chapter gates live under `workflow_gates.chapters.<场景任务ID>` and follow `chapter_gate_template`; do not use a singleton chapter gate because long novels need per-chapter state.
 - Chapter gates are按章节/场景任务ID records and must move through `outline_ready → draft_ready → self_check_passed → human_finalized → knowledge_reviewed`.
 - If a gate is blocked, write `blocked_reason` and ask the author for the next decision instead of inventing a workaround.
+- Gate flags and `checks.*_done` must be JSON booleans. A chapter gate can pass only after every preceding gate passes; phase completion must agree with `phases.*.status`, human approval, and prerequisite phases.
 
 ## Repository Layout
 
@@ -69,6 +71,7 @@ Long-form writing must separate durable rules, story canon, chapter inputs, and 
 - `assets/灵感/`: Inspiration-card template and category placeholders only. Live inspiration cards belong in the novel project root `灵感/`.
 - `assets/tracking-*.md`: Templates for project-root `追踪/` files. They are templates only, not live novel state.
 - `scripts/validate_*.py`: Static validators for skill and asset consistency.
+- `scripts/test_validators.py`: Standard-library regression tests for live project validation; generated fixtures stay under `.tmp/skill-workflow-fixes/` and are cleaned after each run.
 - `docs/reviews/<date>-<skill>-audit.md`: Optional human-readable audit reports produced by novel-meta/agent-dispatch. Keep reports repo-scoped; do not put live novel prose here.
 - `third_party/<owner>__<repo>/`: Local-only shallow clones for reference research. Treat as read-only; do not edit, validate, or vendor third-party code into this skill pack.
 - `.claude-plugin/plugin.json`: Claude plugin metadata.
@@ -116,6 +119,9 @@ Templates live in `assets/` and are copied or used as references. Do not write l
 
 - Skills should refer to the active project file as `novel-config.json`.
 - Validators in this repository validate the template file unless explicitly checking a live novel project.
+- Use `validate_assets.py --template <type> --file <actual-file>` for an actual config or canon card. Without `--file`, the command checks the repository template only. `validate_novel_project.py --project-root <novel-root>` checks live config, formal cards, gates, and chapter bindings together.
+- Iron-rule consumers read numeric IDs from `iron_rules.enabled` and look up `iron_rules.severity` by string ID; `_v2_alias` is descriptive metadata, not a boolean switch.
+- Repository skill audits use the skill pack and templates; a live novel project is optional. Only chapter drafting requires live config and progress files.
 
 ## Editing Rules
 
@@ -139,6 +145,7 @@ python3 scripts/validate_novel_structure_skill.py --all
 python3 scripts/validate_agent_dispatch_skill.py --all
 python3 scripts/validate_novel_write_skill.py --all
 python3 scripts/validate_novel_meta_skill.py --all
+python3 -m unittest discover -s scripts -p 'test_*.py'
 ```
 
 For live novel projects that consume this skill pack, run the read-only project consistency check:

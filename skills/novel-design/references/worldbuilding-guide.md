@@ -42,7 +42,7 @@ M1 是设定期的第一步——5 模块依赖关系中最上游的模块。
 
 ### 步骤④ validation
 
-- 跑 `validate_assets.py --template location`（Phase 1 模板）
+- 对每个实际地点卡运行 `python3 /path/to/novel-writer-skills/scripts/validate_assets.py --template location --file /path/to/novel/知识库/地点/X.md`；将示例路径替换为真实绝对路径
 - location ↔ spec 一致性 grep
 - 跑 `validate_novel_design_skill.py --template m1-worldbuilding`（自身）
 

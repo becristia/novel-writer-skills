@@ -27,11 +27,11 @@
 - 先读 `知识库/_index.md`，再按关联词条读取正式词条；Grep `**境界**` `**位置**` `**关系**` 等关键字段 → 词条快照
 - 读取相关 `知识库/暂存区/` 提案 → 标注"未入正史"，只作提醒，不作为确定设定
 - 读取追踪层：`追踪/当前上下文.md`、`追踪/伏笔.md`、`追踪/时间线.md`、`追踪/角色状态.md`、`追踪/情节线.md`、`追踪/写作任务.md` → 本章续写提醒
-- 从项目根 `novel-config.json` 读用户画像 / 风格 → 风格要求
+- 从项目根 `novel-config.json` 读用户画像、风格、`chapter_requirements`，以及 `iron_rules.enabled` 中各编号对应的规则和 `iron_rules.severity` → 自包含的风格与约束快照
 
 ### 步骤② system prompt + user prompt 构造
 
-- system prompt：固定部分（角色 + 12 条铁律 + 字数限制）
+- system prompt：角色 + 当前配置启用的铁律及各自 severity + 当前配置字数限制；禁用规则不注入，warn / info 不作为硬拦截
 - user prompt：细纲 + 压缩包 + 起草任务
 
 ### 步骤③ 子代理执行 + 输出

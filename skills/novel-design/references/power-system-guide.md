@@ -36,7 +36,7 @@ M3 依赖 M1（力量是世界规则）。M3 输出"境界/技能"作为 M2 人�
 
 ### 步骤④ validation
 
-- 跑 `validate_assets.py --template concept`（Phase 1 模板）
+- 对每个实际概念卡运行 `python3 /path/to/novel-writer-skills/scripts/validate_assets.py --template concept --file /path/to/novel/知识库/概念/X.md`；将示例路径替换为真实绝对路径
 - concept ↔ spec 一致性 grep
 - 跑 `validate_novel_design_skill.py --template m3-power`
 

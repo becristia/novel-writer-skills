@@ -64,6 +64,8 @@ novel-meta M4 审计 ─────────> novel-design (4 视角)
 3. 项目根 `novel-config.json` 存在，格式对齐 `assets/novel-config-template.json`
 4. `assets/*.md` 模板可读
 
+项目文件校验使用技能仓库内脚本的实际路径，并传 `--file` 指向刚生成的词条；省略 `--file` 只检查模板。整体一致性使用 `validate_novel_project.py --project-root <小说项目绝对路径>`。
+
 ## 5 模块子流程概览
 
 ### M1：世界观（详见 references/worldbuilding-guide.md）

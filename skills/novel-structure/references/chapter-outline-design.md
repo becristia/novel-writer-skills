@@ -96,6 +96,7 @@ L3 依赖 L2 地图规划。
 - 关联词条解析检查：每个词条ID或词条名能在 `_index.md` 或 `知识库/<类型>/` 找到；缺词条时不得跳过，回 novel-design 补设定或由作者确认标记为待建词条
 - 章节元数据检查：POV / 场景地点 / 故事时间 / 出场人物 / 知识库更新标记 / 追踪更新齐全
 - 矩阵绑定检查：情节线ID 可在 `追踪/情节线.md` 找到或新增提案；场景任务ID 可在 `追踪/写作任务.md` 找到或新增 planned 行
+- 每章使用独立 Markdown 章节标题；章节正文中的 `情节线ID`、`场景任务ID` 必须填实际 ID，不能用其他章或备注里的 ID 代替。提案经作者确认、矩阵同步后，运行 `python3 /path/to/novel-writer-skills/scripts/validate_novel_project.py --project-root /path/to/novel` 检查逐章绑定；替换为真实绝对路径
 - 节奏密度自检：每 10 章 ≤ 3 大场景 / 每场景 ≥ 3 章 / 每 10 章 ≥ 1 章日常 / 每地图 ≤ 3-4 核心事件
 - 8 字段与 novel-write §5 阶段 ① 字段对位（**关键跨 skill 契约**）
 - 跑 `validate_novel_structure_skill.py --template pacing-check`

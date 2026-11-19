@@ -44,9 +44,9 @@ novel-meta M4 步骤② → 模式 2
 主代理在调度任何模式前读：
 
 1. 目标 skill / 输入文件存在（novel-X SKILL.md / 细纲）
-2. 项目根 `novel-config.json` 存在，格式对齐 `assets/novel-config-template.json`
-3. `进度.json` 使用 `assets/progress-template.json` schema，且 `checks.*` / `phases.*` / `current_*` 在有效状态
-4. 模式 1 必须先通过 novel-write 调用前自检，确认 `情节线ID`、`场景任务ID`、`workflow_gates.chapters.<场景任务ID>` 与写作任务矩阵状态有效
+2. 模式 1：小说项目根 `novel-config.json` 存在，格式对齐 `assets/novel-config-template.json`；`进度.json` 使用 `assets/progress-template.json` schema，且 `checks.*` / `phases.*` / `current_*` 在有效状态
+3. 模式 1 必须先通过 novel-write 调用前自检，确认 `情节线ID`、`场景任务ID`、`workflow_gates.chapters.<场景任务ID>` 与写作任务矩阵状态有效
+4. 模式 2：仓库审计只需目标 skill、references、校验脚本和 `assets/` 模板。真实小说项目是可选输入；没有样本时只检查静态一致性，并标明运行效果未验证，不要求创建小说配置或进度文件
 
 ## 2 模式子流程概览
 
